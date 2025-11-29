@@ -10,7 +10,7 @@ export const Logo = ({ className = "" }: { className?: string }) => {
         </div>
       </div>
       <span className="text-xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-        SmartPark
+        Orion Mall by parkngo powerd by Cardano
       </span>
     </div>
   );

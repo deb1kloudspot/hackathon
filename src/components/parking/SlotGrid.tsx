@@ -10,11 +10,9 @@ interface SlotGridProps {
 export const SlotGrid = ({ slots, onSlotSelect, selectedSlotId }: SlotGridProps) => {
   const rows = Array.from(new Set(slots.map((s) => s.row))).sort();
 
-  // 🔹 FIXED: every row has exactly 8 parking positions
   const NUM_SLOTS_PER_ROW = 8;
   const allPositions = Array.from({ length: NUM_SLOTS_PER_ROW }, (_, i) => i + 1);
 
-  // Group rows as [A,B], [C,D], ...
   const rowPairs: [string, string | null][] = [];
   for (let i = 0; i < rows.length; i += 2) {
     rowPairs.push([rows[i], rows[i + 1] ?? null]);
@@ -142,7 +140,6 @@ interface RowProps {
   selectedSlotId?: string;
 }
 
-/** Small vertical lane between groups of 4 slots */
 const VerticalLane = () => (
   <div className="w-4 h-9 sm:h-10 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center shadow-[0_0_10px_rgba(0,0,0,0.7)]">
     <div className="h-[70%] w-[1px] border-l border-dashed border-white/40" />
@@ -275,11 +272,6 @@ const RowWithSlots = ({
                 </span>
               </div>
             </div>
-          )}
-
-
-          {slot.status === "suggested" && (
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-glow-purple rounded-full animate-ping" />
           )}
         </button>
       );

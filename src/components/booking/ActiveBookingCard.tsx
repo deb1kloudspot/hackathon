@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { Booking } from "@/types/parking";
 import { Button } from "@/components/ui/button";
 import { Clock, MapPin, AlertCircle, Wallet } from "lucide-react";
@@ -14,7 +14,7 @@ interface ActiveBookingCardProps {
   onAddMoney: () => void;
 }
 
-const LOW_BALANCE_THRESHOLD = 50; // 50 ADA
+const LOW_BALANCE_THRESHOLD = 50; // in ADA
 
 export const ActiveBookingCard = ({
   booking,
@@ -26,11 +26,12 @@ export const ActiveBookingCard = ({
   const [timeParked, setTimeParked] = useState(0);
   const [isCharging, setIsCharging] = useState(true);
   const [showLowBalanceAlert, setShowLowBalanceAlert] = useState(false);
-  const [bookingStatus, setBookingStatus] = useState<
-    "active" | "stopped_insufficient_balance"
-  >("active");
+  const [bookingStatus, setBookingStatus] =
+    useState<"active" | "stopped_insufficient_balance">("active");
 
-  // Update time parked counter
+  // ─────────────────────────────────────────────
+  // 1) Live time counter (seconds since start)
+  // ─────────────────────────────────────────────
   useEffect(() => {
     const updateTimer = () => {
       const now = new Date().getTime();
@@ -44,7 +45,9 @@ export const ActiveBookingCard = ({
     return () => clearInterval(interval);
   }, [booking.startTime]);
 
-  // Per-minute wallet charging
+  // ─────────────────────────────────────────────
+  // 2) Per-minute wallet charging in ADA
+  // ─────────────────────────────────────────────
   useEffect(() => {
     if (!isCharging || bookingStatus !== "active") return;
 
@@ -52,7 +55,7 @@ export const ActiveBookingCard = ({
       try {
         const response = await chargeWallet(
           booking.id,
-          booking.ratePerMinute,
+          booking.ratePerMinute, // ADA per minute
           walletBalance
         );
 
@@ -66,7 +69,7 @@ export const ActiveBookingCard = ({
       } catch (error) {
         console.error("Failed to charge wallet:", error);
       }
-    }, 60000); // Charge every 60 seconds
+    }, 60000); // every 60 seconds
 
     return () => clearInterval(chargeInterval);
   }, [
@@ -78,13 +81,19 @@ export const ActiveBookingCard = ({
     onWalletUpdate,
   ]);
 
-  // Check for low balance
+  // ─────────────────────────────────────────────
+  // 3) Low balance indicator
+  // ─────────────────────────────────────────────
   useEffect(() => {
     setShowLowBalanceAlert(
-      walletBalance < LOW_BALANCE_THRESHOLD && bookingStatus === "active"
+      walletBalance < LOW_BALANCE_THRESHOLD &&
+      bookingStatus === "active"
     );
   }, [walletBalance, bookingStatus]);
 
+  // ─────────────────────────────────────────────
+  // 4) Derived values for UI
+  // ─────────────────────────────────────────────
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -96,129 +105,207 @@ export const ActiveBookingCard = ({
     return `${minutes}m ${secs}s`;
   };
 
-  // Each full minute * ratePerMinute (already in ADA)
-  const estimatedCost =
-    Math.floor(timeParked / 60) * booking.ratePerMinute;
+  const minutesParked = Math.floor(timeParked / 60);
+  const chargedSoFar = minutesParked * booking.ratePerMinute; // ADA
+  const estimatedRemainingMinutes = useMemo(() => {
+    if (booking.ratePerMinute <= 0) return Infinity;
+    return Math.floor(walletBalance / booking.ratePerMinute);
+  }, [walletBalance, booking.ratePerMinute]);
+
+  // Circular timer visual (not hard limit, just 0–60 min loop visual)
+  const MAX_VISUAL_SECONDS = 60 * 60; // 1 hour = full circle (for display)
+  const progress =
+    MAX_VISUAL_SECONDS === 0
+      ? 0
+      : Math.min(timeParked / MAX_VISUAL_SECONDS, 1);
+  const radius = 36;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference * (1 - progress);
 
   return (
     <div
       className={cn(
         "glass-strong rounded-xl p-6 space-y-4 border-2 relative overflow-hidden",
         bookingStatus === "stopped_insufficient_balance"
-          ? "border-destructive/50"
+          ? "border-destructive/60"
           : showLowBalanceAlert
-            ? "border-yellow-500/50"
-            : "border-primary/20"
+            ? "border-yellow-500/70"
+            : "border-primary/30"
       )}
     >
+      {/* subtle background glow for low balance */}
       {showLowBalanceAlert && bookingStatus === "active" && (
-        <div className="absolute inset-0 bg-yellow-500/5 animate-pulse" />
+        <div className="absolute inset-0 bg-yellow-500/5 pointer-events-none" />
       )}
 
       <div className="relative space-y-4">
-        {/* Low Balance Alert */}
+        {/* Alerts */}
         {showLowBalanceAlert && bookingStatus === "active" && (
-          <Alert className="border-yellow-500/50 bg-yellow-500/10">
+          <Alert className="border-yellow-500/60 bg-yellow-500/10">
             <AlertCircle className="h-4 w-4 text-yellow-500" />
-            <AlertDescription className="text-yellow-500">
-              Your wallet balance is low. Please recharge to continue parking.
+            <AlertDescription className="text-yellow-500 text-xs">
+              Wallet balance is low. At {booking.ratePerMinute} ADA/min, you have
+              roughly {estimatedRemainingMinutes} minutes left.
             </AlertDescription>
           </Alert>
         )}
 
-        {/* Insufficient Balance Alert */}
         {bookingStatus === "stopped_insufficient_balance" && (
-          <Alert className="border-destructive/50 bg-destructive/10">
+          <Alert className="border-destructive/60 bg-destructive/10">
             <AlertCircle className="h-4 w-4 text-destructive" />
-            <AlertDescription className="text-destructive">
-              Your booking was stopped due to insufficient wallet balance.
+            <AlertDescription className="text-destructive text-xs">
+              Booking was stopped due to insufficient ADA in your wallet.
             </AlertDescription>
           </Alert>
         )}
 
-        <div className="flex items-center justify-between mb-4">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-2">
           <h3 className="text-xl font-bold">
             {bookingStatus === "active" ? "Active Booking" : "Booking Stopped"}
           </h3>
           <div
             className={cn(
-              "px-3 py-1 rounded-full text-sm font-semibold",
+              "px-3 py-1 rounded-full text-xs font-semibold",
               bookingStatus === "active"
-                ? "bg-accent/20 text-accent"
-                : "bg-destructive/20 text-destructive"
+                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-400/40"
+                : "bg-destructive/15 text-destructive border border-destructive/40"
             )}
           >
-            {bookingStatus === "active" ? "Active" : "Stopped"}
+            {bookingStatus === "active" ? "LIVE · ADA" : "INSUFFICIENT BALANCE"}
           </div>
         </div>
 
-        <div className="space-y-3 mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <MapPin className="w-5 h-5 text-primary" />
-              <span className="text-2xl font-bold text-primary">
-                {booking.slotLabel}
-              </span>
-            </div>
-            <span className="text-sm text-muted-foreground">
-              {booking.floor}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Clock className="w-4 h-4" />
-            <span>Started at {booking.startTime.toLocaleTimeString()}</span>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3 p-3 bg-background/50 rounded-lg">
-            <div>
-              <p className="text-xs text-muted-foreground">Time Parked</p>
-              <p className="text-lg font-bold text-primary">
-                {formatTime(timeParked)}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Rate</p>
-              <p className="text-lg font-bold text-accent">
-                {booking.ratePerMinute} ADA/min
-              </p>
-            </div>
-          </div>
-
-          <div className="p-3 glass rounded-lg space-y-2">
+        {/* Slot & time info row */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Wallet className="w-4 h-4 text-primary" />
-                <span className="text-sm font-semibold">Wallet Balance</span>
+                <MapPin className="w-5 h-5 text-primary" />
+                <span className="text-2xl font-bold text-primary">
+                  {booking.slotLabel}
+                </span>
               </div>
-              <span
-                className={cn(
-                  "text-lg font-bold",
-                  walletBalance < LOW_BALANCE_THRESHOLD
-                    ? "text-yellow-500"
-                    : "text-primary"
-                )}
-              >
-                {walletBalance} ADA
+              <span className="text-xs text-muted-foreground">
+                {booking.floor}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Estimated Cost</span>
-              <span className="font-semibold">
-                {estimatedCost} ADA
-              </span>
+
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="w-4 h-4" />
+              <span>Started at {booking.startTime.toLocaleTimeString()}</span>
+            </div>
+          </div>
+
+          {/* Circular timer block */}
+          <div className="flex items-center justify-center">
+            <div className="relative w-24 h-24">
+              <svg
+                className="w-24 h-24 -rotate-90"
+                viewBox="0 0 100 100"
+              >
+                {/* background circle */}
+                <circle
+                  className="text-slate-700/80"
+                  strokeWidth="6"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r={radius}
+                  cx="50"
+                  cy="50"
+                />
+                {/* progress circle */}
+                <circle
+                  className={cn(
+                    "transition-all duration-500 ease-out",
+                    bookingStatus === "active"
+                      ? "text-primary"
+                      : "text-destructive"
+                  )}
+                  strokeWidth="6"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r={radius}
+                  cx="50"
+                  cy="50"
+                  strokeDasharray={circumference}
+                  strokeDashoffset={strokeDashoffset}
+                />
+              </svg>
+              <div className="absolute inset-0 flex flex-col items-center justify-center">
+                <span className="text-[10px] text-muted-foreground">
+                  Time parked
+                </span>
+                <span className="text-xs font-semibold">
+                  {formatTime(timeParked)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
+        {/* Billing & wallet panel */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2">
+          <div className="p-3 glass rounded-lg space-y-1">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+              Rate
+            </p>
+            <p className="text-lg font-bold text-accent">
+              {booking.ratePerMinute} ADA/min
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Per-minute pay-as-you-park.
+            </p>
+          </div>
+
+          <div className="p-3 glass rounded-lg space-y-1">
+            <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+              Charged so far
+            </p>
+            <p className="text-lg font-bold text-primary">
+              {chargedSoFar} ADA
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              Based on {minutesParked} full minute
+              {minutesParked === 1 ? "" : "s"} elapsed.
+            </p>
+          </div>
+
+          <div className="p-3 glass rounded-lg space-y-1">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Wallet className="w-4 h-4 text-primary" />
+                <p className="text-[11px] text-muted-foreground uppercase tracking-wide">
+                  Wallet balance
+                </p>
+              </div>
+            </div>
+            <p
+              className={cn(
+                "text-lg font-bold",
+                walletBalance < LOW_BALANCE_THRESHOLD
+                  ? "text-yellow-400"
+                  : "text-primary"
+              )}
+            >
+              {walletBalance} ADA
+            </p>
+            <p className="text-[11px] text-muted-foreground">
+              ~{estimatedRemainingMinutes} minutes left at current rate.
+            </p>
+          </div>
+        </div>
+
+        {/* Actions */}
         {bookingStatus === "active" ? (
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-3 mt-3">
             <Button
               onClick={onAddMoney}
               variant="outline"
-              className="flex-1 border-primary/30 hover:bg-primary/10"
+              className="flex-1 border-primary/40 hover:bg-primary/10"
             >
-              Add Money
+              Add ADA to Wallet
             </Button>
             <Button
               onClick={onEnd}
@@ -228,12 +315,14 @@ export const ActiveBookingCard = ({
             </Button>
           </div>
         ) : (
-          <Button
-            onClick={onAddMoney}
-            className="w-full bg-primary hover:bg-primary/90"
-          >
-            Recharge Wallet &amp; Book Again
-          </Button>
+          <div className="mt-3">
+            <Button
+              onClick={onAddMoney}
+              className="w-full bg-primary hover:bg-primary/90"
+            >
+              Recharge Wallet & Book Again
+            </Button>
+          </div>
         )}
       </div>
     </div>

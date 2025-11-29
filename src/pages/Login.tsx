@@ -28,55 +28,62 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen rainbow-gradient flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 flex items-center justify-center p-4 relative overflow-hidden">
       {/* Animated background orbs */}
       <div className="absolute top-20 left-20 w-96 h-96 bg-glow-purple/30 rounded-full blur-3xl animate-pulse" />
       <div className="absolute bottom-20 right-20 w-96 h-96 bg-glow-cyan/30 rounded-full blur-3xl animate-pulse delay-1000" />
-      
+
       {/* Login card */}
       <div className="relative w-full max-w-md">
         {/* Rainbow glow border effect */}
         <div className="absolute -inset-0.5 rainbow-gradient rounded-3xl blur opacity-75 animate-pulse-glow" />
-        
+
         {/* Glass card */}
-        <div className="relative glass-strong rounded-3xl p-8 space-y-6">
+        <div className="relative bg-black text-white glass-strong rounded-3xl p-8 space-y-6">
           <div className="text-center space-y-2">
-            <div className="flex justify-center">
-              <Logo className="scale-125" />
+            {/* Logo Section */}
+            <div className="flex justify-center items-center mb-4">
+              <Logo className="scale-110" />
             </div>
-            <h1 className="text-3xl font-bold mt-4">Welcome Back</h1>
-            <p className="text-muted-foreground text-sm">
+            <h1 className="text-3xl font-bold mt-4 text-white">
+              Welcome Back
+            </h1>
+            <p className="text-white/80 text-sm">
               Find your nearest empty parking slot in seconds
             </p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-white">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="bg-background/50 border-border/50 focus:border-primary"
+                className="bg-gray-800 text-white border-border/50 focus:border-primary"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password" className="text-white">
+                Password
+              </Label>
               <Input
                 id="password"
                 type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="bg-background/50 border-border/50 focus:border-primary"
+                className="bg-gray-800 text-white border-border/50 focus:border-primary"
               />
             </div>
 
-            <Button 
-              type="submit" 
+            <Button
+              type="submit"
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold glow-cyan"
             >
               Login to SmartPark
@@ -95,7 +102,7 @@ const Login = () => {
           <Button
             type="button"
             variant="outline"
-            className="w-full border-border/50 hover:bg-secondary"
+            className="w-full border-border/50 hover:bg-secondary text-white"
             onClick={handleGuestLogin}
           >
             Continue as Guest

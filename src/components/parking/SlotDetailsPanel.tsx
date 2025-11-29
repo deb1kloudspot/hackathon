@@ -24,16 +24,16 @@ export const SlotDetailsPanel = ({
     2;
 
   return (
-    <div className="fixed inset-y-0 right-0 w-full md:w-96 glass-strong border-l border-border/50 p-6 space-y-6 overflow-y-auto z-50">
+    <div className="fixed inset-y-0 right-0 w-full md:w-96 bg-black text-white glass-strong border-l border-border/50 p-6 space-y-6 overflow-y-auto z-50">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold">Slot Details</h2>
         <Button variant="ghost" size="icon" onClick={onClose}>
-          <X className="w-5 h-5" />
+          <X className="w-5 h-5 text-white" />
         </Button>
       </div>
 
       <div className="space-y-4">
-        <div className="glass rounded-xl p-4 space-y-3">
+        <div className="bg-black text-white rounded-xl p-4 space-y-3">
           <div className="flex items-baseline gap-2">
             <span className="text-4xl font-bold text-primary">{slot.id}</span>
             <span className="text-muted-foreground">{slot.floor}</span>
@@ -68,7 +68,7 @@ export const SlotDetailsPanel = ({
           <Button
             onClick={onClose}
             variant="outline"
-            className="w-full border-border/50"
+            className="w-full border-border/50 text-white hover:text-primary"
           >
             Change Slot
           </Button>
