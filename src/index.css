@@ -1,0 +1,157 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    /* Dark futuristic theme with neon accents */
+    --background: 225 40% 8%;
+    --foreground: 210 40% 98%;
+
+    --card: 225 30% 12%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 225 30% 12%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 190 100% 50%;
+    --primary-foreground: 225 40% 8%;
+
+    --secondary: 225 25% 18%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 225 20% 20%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 155 100% 50%;
+    --accent-foreground: 225 40% 8%;
+
+    --destructive: 340 100% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 225 20% 25%;
+    --input: 225 20% 18%;
+    --ring: 190 100% 50%;
+
+    --radius: 1rem;
+
+    /* Status colors for parking slots */
+    --slot-available: 155 100% 50%;
+    --slot-occupied: 340 100% 60%;
+    --slot-selected: 220 100% 60%;
+    --slot-suggested: 270 100% 60%;
+
+    /* Neon glow colors */
+    --glow-cyan: 190 100% 50%;
+    --glow-green: 155 100% 50%;
+    --glow-pink: 320 100% 60%;
+    --glow-purple: 270 100% 60%;
+
+    /* Glassmorphism */
+    --glass-bg: 225 30% 12% / 0.4;
+    --glass-border: 210 40% 98% / 0.1;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Glassmorphism effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  /* Rainbow gradient */
+  .rainbow-gradient {
+    background: linear-gradient(
+      135deg,
+      hsl(270, 100%, 60%),
+      hsl(220, 100%, 60%),
+      hsl(190, 100%, 50%),
+      hsl(155, 100%, 50%)
+    );
+  }
+
+  /* Neon glow effects */
+  .glow-cyan {
+    box-shadow: 0 0 20px hsl(var(--glow-cyan) / 0.5),
+                0 0 40px hsl(var(--glow-cyan) / 0.3);
+  }
+
+  .glow-green {
+    box-shadow: 0 0 20px hsl(var(--glow-green) / 0.5),
+                0 0 40px hsl(var(--glow-green) / 0.3);
+  }
+
+  .glow-pink {
+    box-shadow: 0 0 20px hsl(var(--glow-pink) / 0.5),
+                0 0 40px hsl(var(--glow-pink) / 0.3);
+  }
+
+  .glow-pulse {
+    animation: pulse-glow 2s ease-in-out infinite;
+  }
+
+  /* Animations */
+  @keyframes pulse-glow {
+    0%, 100% {
+      opacity: 1;
+      box-shadow: 0 0 20px hsl(var(--glow-cyan) / 0.5);
+    }
+    50% {
+      opacity: 0.8;
+      box-shadow: 0 0 40px hsl(var(--glow-cyan) / 0.8);
+    }
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: -1000px 0;
+    }
+    100% {
+      background-position: 1000px 0;
+    }
+  }
+
+  .shimmer {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.1),
+      transparent
+    );
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+}
